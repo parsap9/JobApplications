@@ -1,12 +1,3 @@
-// Configuration for backend API
-const API_CONFIG = {
-    baseUrl: 'http://localhost:5000',
-    endpoints: {
-        analyze: '/analyze-job',
-        generate: '/generate-response'
-    }
-};
-
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Handle different message types
@@ -25,21 +16,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Handle job description analysis
-async function handleJobAnalysis(description, tabId) {
+function handleJobAnalysis(description, tabId) {
     try {
-        const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.analyze}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ description })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const analysis = await response.json();
+        // Basic keyword matching analysis
+        const analysis = {
+            skills: extractSkills(description),
+            experience: extractExperience(description)
+        };
         
         // Send analysis results back to content script
         chrome.tabs.sendMessage(tabId, {
@@ -53,22 +36,11 @@ async function handleJobAnalysis(description, tabId) {
     }
 }
 
-// Handle AI response generation
-async function handleResponseGeneration(prompt, tabId) {
+// Handle response generation
+function handleResponseGeneration(prompt, tabId) {
     try {
-        const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.generate}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ prompt })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const generatedResponse = await response.json();
+        // Generate a basic response template
+        const generatedResponse = generateBasicResponse();
         
         // Send generated response back to content script
         chrome.tabs.sendMessage(tabId, {
@@ -78,8 +50,29 @@ async function handleResponseGeneration(prompt, tabId) {
 
     } catch (error) {
         console.error('Response generation failed:', error);
-        handleError(tabId, 'Failed to generate AI response');
+        handleError(tabId, 'Failed to generate response');
     }
+}
+
+// Helper function to extract skills from text
+function extractSkills(text) {
+    // Basic implementation - could be enhanced
+    const commonSkills = ['python', 'javascript', 'sql', 'data analysis', 'project management'];
+    return commonSkills.filter(skill => text.toLowerCase().includes(skill.toLowerCase()));
+}
+
+// Helper function to extract experience requirements
+function extractExperience(text) {
+    // Basic implementation - could be enhanced
+    const years = text.match(/\d+\+?\s*years?/g) || [];
+    return years[0] || 'Not specified';
+}
+
+// Helper function to generate basic response
+function generateBasicResponse() {
+    return {
+        response: "Thank you for considering my application. I am excited about this opportunity and believe my skills and experience align well with your requirements."
+    };
 }
 
 // Error handler
